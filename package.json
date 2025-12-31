@@ -1,16 +1,16 @@
 {
   "name": "BetterTwitchControls",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Keyboard shortcuts for Twitch chat/player focus and controls. Created by itspinot on Twitch",
+  "main": "dist/index.js",
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "prepare:extension": "node scripts/prepare-extension.mjs",
     "build:extension": "pnpm run build && pnpm run prepare:extension",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": ["twitch", "controls", "keyboard", "shortcuts", "itspinot", "socialites"],
+  "author": "Socialites, LLC. <itspinot>",
   "license": "ISC",
   "dependencies": {
     "typescript": "^5.9.3"
