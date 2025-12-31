@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "BetterTwitchControls",
+  "version": "1.0.0",
+  "description": "Keyboard shortcuts for Twitch chat/player focus and controls.",
+  "content_scripts": [
+    {
+      "matches": ["*://*.twitch.tv/*", "*://twitch.tv/*"],
+      "js": ["dist/index.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
