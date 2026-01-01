@@ -15,7 +15,8 @@
     "build": "tsc -p tsconfig.json",
     "sync:docs": "node scripts/sync-docs.mjs",
     "prepare:extension": "node scripts/prepare-extension.mjs",
-    "build:extension": "pnpm run build && pnpm run prepare:extension",
+    "zip:extension": "rm -f BetterTwitchControls.zip && cd extension && zip -r -q ../BetterTwitchControls.zip . -x '**/.DS_Store'",
+    "build:extension": "pnpm run build && pnpm run prepare:extension && pnpm run zip:extension",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": ["twitch", "controls", "keyboard", "shortcuts", "itspinot", "socialites"],
