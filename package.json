@@ -5,6 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "sync:docs": "node scripts/sync-docs.mjs",
     "prepare:extension": "node scripts/prepare-extension.mjs",
     "build:extension": "pnpm run build && pnpm run prepare:extension",
     "test": "echo \"Error: no test specified\" && exit 1"

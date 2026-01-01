@@ -1,4 +1,4 @@
-import { copyFile, mkdir, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -8,10 +8,14 @@ const root = join(__dirname, "..");
 const outDir = join(root, "extension");
 const outDistDir = join(outDir, "dist");
 
+const pkg = JSON.parse(
+  await readFile(join(root, "package.json"), "utf8"),
+);
+
 const manifest = {
   manifest_version: 3,
   name: "BetterTwitchControls",
-  version: "1.0.0",
+  version: String(pkg.version || "1.0.0"),
   description: "Keyboard shortcuts for Twitch chat/player focus and controls.",
   content_scripts: [
     {
