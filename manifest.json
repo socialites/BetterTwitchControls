@@ -3,6 +3,10 @@
   "name": "BetterTwitchControls",
   "version": "1.0.0",
   "description": "Keyboard shortcuts for Twitch chat/player focus and controls.",
+  "action": {
+    "default_title": "BetterTwitchControls",
+    "default_popup": "popup.html"
+  },
   "content_scripts": [
     {
       "matches": ["*://*.twitch.tv/*", "*://twitch.tv/*"],

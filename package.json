@@ -1,6 +1,6 @@
 {
   "name": "BetterTwitchControls",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Keyboard shortcuts for Twitch chat/player focus and controls. Created by itspinot on Twitch",
   "main": "dist/index.js",
   "scripts": {

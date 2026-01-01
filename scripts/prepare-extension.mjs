@@ -17,6 +17,10 @@ const manifest = {
   name: "BetterTwitchControls",
   version: String(pkg.version || "1.0.0"),
   description: "Keyboard shortcuts for Twitch chat/player focus and controls.",
+  action: {
+    default_title: "BetterTwitchControls",
+    default_popup: "popup.html",
+  },
   content_scripts: [
     {
       matches: ["*://*.twitch.tv/*", "*://twitch.tv/*"],
@@ -29,5 +33,9 @@ const manifest = {
 await mkdir(outDistDir, { recursive: true });
 await writeFile(join(outDir, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n", "utf8");
 await copyFile(join(root, "dist", "index.js"), join(outDistDir, "index.js"));
+await copyFile(join(root, "CONTROLS.md"), join(outDir, "CONTROLS.md"));
+await copyFile(join(root, "popup.html"), join(outDir, "popup.html"));
+await copyFile(join(root, "popup.css"), join(outDir, "popup.css"));
+await copyFile(join(root, "popup.js"), join(outDir, "popup.js"));
 
 console.log("Prepared extension/ (load this folder via chrome://extensions → Load unpacked)");
