@@ -1,3 +1,6 @@
+## v1.1.2 (January 1, 2026):
+- Update CONTROLS.md to include new features
+
 ## v1.1.1 (January 1, 2026):
 - Update popup to show "You are up to date" when no update is available
 - Update popup to show current version

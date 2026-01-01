@@ -15,8 +15,6 @@
 - **`l` (while player controls are focused)**: Skip to Live (activates the “LIVE” control that appears after rewinding).
 - **`ArrowUp` / `ArrowDown` (while player controls are focused)**: Volume up/down (focuses the volume slider if needed, then increments/decrements it).
 
-### Desired / Planned (from initial request)
-
 - **Focus**
   - **Focus chat from outside chat**: `c` (**implemented**)
   - **Focus player from inside chat**: `Esc` (**implemented**)
