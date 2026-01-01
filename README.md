@@ -1,5 +1,7 @@
 ### BetterTwitchControls
 
+<img src="assets/icons/icon128.png" alt="BetterTwitchControls icon" width="72" height="72" />
+
 ### Controls
 
 <!-- CONTROLS:START -->

@@ -132,6 +132,44 @@ function focusPlayerControls() {
   }
 }
 
+function canStealFocusForPlayer(): boolean {
+  if (document.visibilityState !== "visible") return false;
+  const active = document.activeElement;
+  // Don't steal focus if user is typing anywhere.
+  if (isEditableElement(active)) return false;
+  return true;
+}
+
+function autoFocusPlayerControlsOnceReady() {
+  if (!canStealFocusForPlayer()) return;
+
+  // Try immediately + a couple delayed retries (player mounts async).
+  focusPlayerControls();
+  window.setTimeout(() => {
+    if (!canStealFocusForPlayer()) return;
+    focusPlayerControls();
+  }, 600);
+  window.setTimeout(() => {
+    if (!canStealFocusForPlayer()) return;
+    focusPlayerControls();
+  }, 1800);
+
+  // Also watch for player controls being inserted (Twitch is SPA-ish).
+  try {
+    const obs = new MutationObserver(() => {
+      if (!canStealFocusForPlayer()) return;
+      const controls = document.querySelector('[data-a-target="player-controls"]');
+      if (!controls) return;
+      focusPlayerControls();
+      obs.disconnect();
+    });
+    obs.observe(document.documentElement, { childList: true, subtree: true });
+    window.setTimeout(() => obs.disconnect(), 8000);
+  } catch {
+    // ignore
+  }
+}
+
 function isPlayerControlsFocused(): boolean {
   const active = document.activeElement;
   if (!(active instanceof HTMLElement)) return false;
@@ -323,7 +361,7 @@ function onKeyDown(e: KeyboardEvent) {
   // "t": toggle theatre mode when the player controls are focused.
   if (e.key === "t" || e.key === "T") {
     if (e.altKey || e.ctrlKey || e.metaKey) return;
-    if (!isPlayerControlsFocused()) return;
+    if (!isPlayerControlsFocused()) focusPlayerControls();
     e.preventDefault();
     e.stopPropagation();
     toggleTheatreMode();
@@ -333,7 +371,7 @@ function onKeyDown(e: KeyboardEvent) {
   // "l": Skip to Live when the player controls are focused (button appears after rewinding).
   if (e.key === "l" || e.key === "L") {
     if (e.altKey || e.ctrlKey || e.metaKey) return;
-    if (!isPlayerControlsFocused()) return;
+    if (!isPlayerControlsFocused()) focusPlayerControls();
     e.preventDefault();
     e.stopPropagation();
     activateSkipToLive();
@@ -343,7 +381,7 @@ function onKeyDown(e: KeyboardEvent) {
   // ArrowUp/ArrowDown: adjust volume via the player volume slider when player controls are focused.
   if (e.key === "ArrowUp" || e.key === "ArrowDown") {
     if (e.altKey || e.ctrlKey || e.metaKey) return;
-    if (!isPlayerControlsFocused()) return;
+    if (!isPlayerControlsFocused()) focusPlayerControls();
 
     // If the slider doesn't exist, don't interfere with scrolling.
     if (!getVolumeSlider()) return;
@@ -380,6 +418,9 @@ function install() {
 
   // Capture phase so we can grab the key before site handlers if needed.
   window.addEventListener("keydown", onKeyDown, { capture: true });
+
+  // Make theatre-mode + player shortcuts work immediately on page load.
+  autoFocusPlayerControlsOnceReady();
 }
 
 install();
