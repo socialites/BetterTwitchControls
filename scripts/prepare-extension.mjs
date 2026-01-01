@@ -7,6 +7,7 @@ const root = join(__dirname, "..");
 
 const outDir = join(root, "extension");
 const outDistDir = join(outDir, "dist");
+const outIconsDir = join(outDir, "assets", "icons");
 
 const pkg = JSON.parse(
   await readFile(join(root, "package.json"), "utf8"),
@@ -17,6 +18,11 @@ const manifest = {
   name: "BetterTwitchControls",
   version: String(pkg.version || "1.0.0"),
   description: "Keyboard shortcuts for Twitch chat/player focus and controls.",
+  icons: {
+    16: "assets/icons/icon16.png",
+    48: "assets/icons/icon48.png",
+    128: "assets/icons/icon128.png",
+  },
   action: {
     default_title: "BetterTwitchControls",
     default_popup: "popup.html",
@@ -31,11 +37,15 @@ const manifest = {
 };
 
 await mkdir(outDistDir, { recursive: true });
+await mkdir(outIconsDir, { recursive: true });
 await writeFile(join(outDir, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n", "utf8");
 await copyFile(join(root, "dist", "index.js"), join(outDistDir, "index.js"));
 await copyFile(join(root, "CONTROLS.md"), join(outDir, "CONTROLS.md"));
 await copyFile(join(root, "popup.html"), join(outDir, "popup.html"));
 await copyFile(join(root, "popup.css"), join(outDir, "popup.css"));
 await copyFile(join(root, "popup.js"), join(outDir, "popup.js"));
+await copyFile(join(root, "assets", "icons", "icon16.png"), join(outIconsDir, "icon16.png"));
+await copyFile(join(root, "assets", "icons", "icon48.png"), join(outIconsDir, "icon48.png"));
+await copyFile(join(root, "assets", "icons", "icon128.png"), join(outIconsDir, "icon128.png"));
 
 console.log("Prepared extension/ (load this folder via chrome://extensions → Load unpacked)");
