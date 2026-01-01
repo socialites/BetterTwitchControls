@@ -1,3 +1,6 @@
+## v1.0.3 (January 1, 2026):
+- Update icons
+
 ## v1.0.2 (January 1, 2026):
 - Added icons
 - Updated build scripts
