@@ -1,3 +1,6 @@
+## v1.1.3 (January 1, 2026):
+- Update script to not attach focus to volume slider so that volume up/down keys work as expected while still allowing other shortcuts to work as intended
+
 ## v1.1.2 (January 1, 2026):
 - Update CONTROLS.md to include new features
 

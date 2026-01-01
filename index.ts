@@ -24,7 +24,11 @@ const isTwitchDomain = () => {
 
 function isEditableElement(el: Element | null): boolean {
   if (!el) return false;
-  if (el instanceof HTMLInputElement) return true;
+  if (el instanceof HTMLInputElement) {
+    // Treat range sliders (like Twitch volume) as "non-editable" so our hotkeys still work.
+    if ((el.getAttribute("type") || "").toLowerCase() === "range") return false;
+    return true;
+  }
   if (el instanceof HTMLTextAreaElement) return true;
   if (el instanceof HTMLSelectElement) return true;
   const htmlEl = el as HTMLElement;
@@ -321,19 +325,6 @@ function adjustVolume(delta: number) {
   const slider = getVolumeSlider();
   if (!slider) return;
 
-  // Ensure arrow keys "wake up" the slider behavior.
-  if (!isVolumeSliderFocused()) {
-    try {
-      slider.focus({ preventScroll: true } as any);
-    } catch {
-      try {
-        slider.focus();
-      } catch {
-        // ignore
-      }
-    }
-  }
-
   const current = Number(slider.value || 0);
   const stepAttr = Number(slider.step || 0.01);
   const step = stepAttr > 0 ? stepAttr : 0.01;
@@ -346,6 +337,44 @@ function onKeyDown(e: KeyboardEvent) {
   if (e.isComposing) return;
 
   const active = document.activeElement;
+
+  // If the Twitch volume slider is focused, it "eats" many keys. We redirect common player keys
+  // back to the player controls so shortcuts keep working.
+  if (isVolumeSliderFocused()) {
+    const k = e.key;
+    const isSpace = k === " " || k === "Space" || k === "Spacebar";
+    const passthroughKeys =
+      k === "ArrowLeft" ||
+      k === "ArrowRight" ||
+      k === "k" ||
+      k === "K" ||
+      k === "m" ||
+      k === "M" ||
+      k === "Escape" ||
+      isSpace;
+
+    // Let our custom handlers run for these keys instead.
+    const handledByUs =
+      k === "c" ||
+      k === "C" ||
+      k === "t" ||
+      k === "T" ||
+      k === "l" ||
+      k === "L" ||
+      k === "ArrowUp" ||
+      k === "ArrowDown";
+
+    if (passthroughKeys && !handledByUs) {
+      // Stop the slider from adjusting itself / scrolling.
+      if (k === "ArrowLeft" || k === "ArrowRight" || isSpace) {
+        e.preventDefault();
+      }
+
+      focusPlayerControls();
+      // Don't stop propagation; let Twitch handle the key with player focus restored.
+      return;
+    }
+  }
 
   // Esc: when you're typing in chat, exit chat focus back to the player.
   if (e.key === "Escape" && isChatInputFocused()) {
@@ -391,6 +420,9 @@ function onKeyDown(e: KeyboardEvent) {
 
     // Use slider.step (Twitch typically uses 0.01). Up = louder, Down = quieter.
     adjustVolume(e.key === "ArrowUp" ? 1 : -1);
+
+    // If focus was on the slider (mouse click, etc), unstick it.
+    if (isVolumeSliderFocused()) focusPlayerControls();
     return;
   }
 
