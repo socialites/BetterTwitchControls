@@ -1,3 +1,7 @@
+## v1.1.1 (January 1, 2026):
+- Update popup to show "You are up to date" when no update is available
+- Update popup to show current version
+
 ## v1.1.0 (January 1, 2026):
 - Add Icon to popup
 - Add script to automatically focus player controls when player is ready

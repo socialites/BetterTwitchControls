@@ -118,3 +118,27 @@ main {
   color: var(--muted);
   font-size: 12px;
 }
+
+.footer-links {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 2px 0;
+  flex-wrap: wrap;
+}
+
+.link {
+  color: var(--text);
+  text-decoration: underline;
+  text-decoration-color: rgba(169, 112, 255, 0.6);
+}
+
+.link:hover {
+  text-decoration-color: var(--accent);
+}
+
+.version {
+  margin-top: 6px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}

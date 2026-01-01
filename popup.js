@@ -85,4 +85,67 @@ async function loadControls() {
   }
 }
 
-document.addEventListener("DOMContentLoaded", loadControls);
+function setVersion() {
+  const el = document.getElementById("versionLine");
+  if (!el) return;
+  try {
+    const v = chrome.runtime.getManifest().version;
+    el.textContent = `v${v}`;
+  } catch {
+    el.textContent = "v—";
+  }
+}
+
+function openUrl(url) {
+  try {
+    chrome.tabs.create({ url });
+  } catch {
+    window.open(url, "_blank", "noreferrer");
+  }
+}
+
+function setupFooterLinks() {
+  const updateLink = document.getElementById("updateLink");
+  if (updateLink) {
+    const url = `chrome://extensions/?id=${chrome.runtime.id}`;
+    updateLink.addEventListener("click", (e) => {
+      e.preventDefault();
+      openUrl(url);
+    });
+  }
+
+  const contributeLink = document.getElementById("contributeLink");
+  if (contributeLink) {
+    contributeLink.addEventListener("click", (e) => {
+      // ensure new tab from the popup (more reliable than target=_blank)
+      e.preventDefault();
+      openUrl("https://github.com/socialites/BetterTwitchControls");
+    });
+  }
+}
+
+function checkForUpdate() {
+  const updateLink = document.getElementById("updateLink");
+  if (!updateLink) return;
+
+  // If the extension is store-installed, Chrome can tell us if an update is available.
+  // In dev/unpacked, this may just report "no_update" or be throttled; we keep the link.
+  try {
+    chrome.runtime.requestUpdateCheck((status /*, details */) => {
+      if (status === "update_available") {
+        updateLink.textContent = "Update available — Click here to update";
+      } else {
+        updateLink.textContent = "You are up to date";
+      }
+    });
+  } catch {
+    updateLink.textContent = "Click here to check for updates";
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  setupFooterLinks();
+  setVersion();
+  checkForUpdate();
+  loadControls();
+});
