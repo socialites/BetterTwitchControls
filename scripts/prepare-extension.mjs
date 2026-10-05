@@ -32,7 +32,7 @@ const manifest = {
     {
       matches: ["*://*.twitch.tv/*", "*://twitch.tv/*"],
       js: ["dist/index.js"],
-      run_at: "document_idle",
+      run_at: "document_start",
     },
   ],
 };
