@@ -87,3 +87,69 @@ Edit `CONTROLS.md`, then run:
 ```bash
 pnpm run sync:docs
 ```
+
+### Chrome Web Store updates
+
+Use Node 22 for the store commands. These scripts update an **existing** store
+item through the [Chrome Web Store API v2](https://developer.chrome.com/docs/webstore/using-api).
+Finish the listing and privacy information in the Developer Dashboard first.
+
+One-time setup:
+
+1. Enable the Chrome Web Store API in a Google Cloud project.
+2. Configure an OAuth client and authorize the account that owns the extension
+   with the `https://www.googleapis.com/auth/chromewebstore` scope. Obtain a client
+   ID, client secret, and refresh token using Google's
+   [setup guide](https://developer.chrome.com/docs/webstore/using-api).
+3. Copy `.env.store.example` to `.env.store` and fill in those credentials, your
+   publisher ID (Publisher > Settings), and your existing extension ID.
+   `.env.store` is ignored by Git; exported environment variables take precedence.
+
+Alternatively, provide `CWS_ACCESS_TOKEN` from an authorized account or a
+[linked service account](https://developer.chrome.com/docs/webstore/service-accounts).
+This token takes precedence over the OAuth refresh credentials and must be
+renewed when it expires. The scripts do not create service accounts or manage key files.
+
+Before uploading an update, increase `version` in both `package.json` and the root
+`manifest.json` to match. The generated package takes its version from `package.json`.
+Google requires a version higher than the one previously uploaded.
+
+```bash
+source ~/.nvm/nvm.sh && nvm use 22
+pnpm store:upload              # Build/package and upload a draft; does not submit
+pnpm store:status              # Show upload, review, and published status
+pnpm store:submit              # Submit for review; stage the version after approval
+```
+
+The upload command waits up to one minute for asynchronous upload processing.
+If it fails or times out, check `store:status` and the Developer Dashboard before
+retrying or submitting. Store errors exit with a nonzero status.
+
+By default, submission uses `STAGED_PUBLISH`: once Google approves it, release
+the staged version from the Developer Dashboard. To publish automatically after
+approval instead, run:
+
+```bash
+source ~/.nvm/nvm.sh && nvm use 22
+pnpm store:submit --auto-publish
+```
+
+Submission operates on the draft currently uploaded to the configured store item.
+It does not build or upload a ZIP. It refuses an upload still processing, a failed
+upload, an item already under review, or an approved staged item. Existing store
+visibility settings apply; changes to visibility may require a manual dashboard
+publication first. See the
+[publishing API](https://developer.chrome.com/docs/webstore/api/reference/rest/v2/publishers.items/publish).
+
+Preview requests without credentials or network access by setting the publisher
+and extension IDs and using `--dry-run`:
+
+```bash
+source ~/.nvm/nvm.sh && nvm use 22
+pnpm store:upload --dry-run    # Still builds the local ZIP
+pnpm store:submit --dry-run
+pnpm store:status --dry-run
+```
+
+The CLI also supports `--help`. No store credentials are included in the extension
+ZIP. Run `pnpm test` to verify the scripts with mocked Google responses.

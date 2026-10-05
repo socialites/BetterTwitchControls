@@ -1,3 +1,8 @@
+## Unreleased:
+- Add Chrome Web Store API commands to upload packages, submit for review, and check status.
+- Add OAuth refresh/access-token setup, dry-run mode, and staged or automatic publication after review.
+- Document store setup and add mocked API regression tests.
+
 ## v1.2.1 (October 5, 2026):
 - Make explicit `p` / `P` player focus work even when an earlier keyboard listener prevents the key's default action.
 - Register shortcuts at document start and prevent later listeners from undoing explicit player focus.

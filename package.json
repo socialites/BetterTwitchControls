@@ -17,6 +17,9 @@
     "prepare:extension": "node scripts/prepare-extension.mjs",
     "zip:extension": "rm -f BetterTwitchControls.zip && cd extension && zip -r -q ../BetterTwitchControls.zip . -x '**/.DS_Store'",
     "build:extension": "pnpm run build && pnpm run prepare:extension && pnpm run zip:extension",
+    "store:upload": "node scripts/chrome-web-store.mjs upload",
+    "store:submit": "node scripts/chrome-web-store.mjs submit",
+    "store:status": "node scripts/chrome-web-store.mjs status",
     "test": "pnpm run build && node --test tests/*.test.mjs"
   },
   "keywords": ["twitch", "controls", "keyboard", "shortcuts", "itspinot", "socialites"],

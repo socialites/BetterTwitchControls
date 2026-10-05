@@ -4,3 +4,6 @@ extension/
 .vscode/
 extension.zip
 BetterTwitchControls.zip
+.env.store
+.env.store.*
+!.env.store.example
