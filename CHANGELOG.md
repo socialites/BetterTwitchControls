@@ -1,3 +1,9 @@
+## v1.2.1 (October 5, 2026):
+- Make explicit `p` / `P` player focus work even when an earlier keyboard listener prevents the key's default action.
+- Register shortcuts at document start and prevent later listeners from undoing explicit player focus.
+- Keep the same player focus target for manual focus and the two-second timer.
+- Add regression coverage for pressing `p` then `t` immediately, without waiting for automatic focus.
+
 ## v1.2.0 (October 5, 2026):
 - Automatically restore player focus after two seconds outside chat, including after navigation and late player loading.
 - Add `p` / `P` to focus the player immediately without toggling playback.

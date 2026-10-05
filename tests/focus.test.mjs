@@ -11,7 +11,7 @@ const playerHTML = `<div id="channel-player"><div data-a-target="player-controls
   <input data-a-target="player-volume-slider" type="range" min="0" max="1" step="0.01" value="0.5">
 </div></div>`;
 
-function setup(t, { player = true, url = 'https://www.twitch.tv/example' } = {}) {
+function setup(t, { player = true, url = 'https://www.twitch.tv/example', beforeInstall } = {}) {
   const dom = new JSDOM(`${player ? playerHTML : ''}
     <div data-a-target="chat-room-component"><textarea data-a-target="chat-input"></textarea>
       <button id="chat-link">Chat action</button></div>
@@ -62,6 +62,7 @@ function setup(t, { player = true, url = 'https://www.twitch.tv/example' } = {})
     document.activeElement.dispatchEvent(event);
     return event;
   }
+  beforeInstall?.(window);
   window.eval(script);
   return { window, document, find, advance, key,
     setFocused(value) { focused = value; window.dispatchEvent(new window.Event(value ? 'focus' : 'blur')); },
@@ -220,4 +221,49 @@ test('domain guard and installation guard prevent unwanted listeners', t => {
   h.find('[aria-label]').addEventListener('click', () => count++);
   h.key('t');
   assert.equal(count, 1);
+});
+
+// A site or another extension may already have claimed the p key before our
+// window listener runs. Explicit player focus should still happen outside chat.
+test('p then t works immediately even if another listener prevents p', t => {
+  const h = setup(t, { beforeInstall(window) {
+    window.addEventListener('keydown', event => {
+      if (event.key.toLowerCase() === 'p') event.preventDefault();
+    }, { capture: true });
+  } });
+  let toggles = 0;
+  h.find('[aria-label]').addEventListener('click', () => toggles++);
+  h.find('#outside').focus();
+  h.key('p');
+  assert.equal(h.document.activeElement, h.play);
+  h.key('t');
+  assert.equal(toggles, 1);
+  // No automatic-focus time has passed in this test.
+});
+
+
+test('later window listeners cannot undo explicit p focus', t => {
+  const h = setup(t);
+  h.window.addEventListener('keydown', event => {
+    if (event.key === 'p') h.find('#outside').focus();
+  }, { capture: true });
+  h.find('#outside').focus();
+  h.key('p');
+  assert.equal(h.document.activeElement, h.play);
+});
+
+test('previously prevented p still preserves chat, text fields, and modified shortcuts', t => {
+  const h = setup(t, { beforeInstall(window) {
+    window.addEventListener('keydown', event => event.preventDefault(), { capture: true });
+  } });
+  for (const selector of ['textarea', '#search', '#editor', '#chat-link']) {
+    h.find(selector).focus();
+    h.key('p');
+    assert.equal(h.document.activeElement, h.find(selector));
+  }
+  for (const modifier of ['ctrlKey', 'altKey', 'metaKey', 'isComposing']) {
+    h.find('#outside').focus();
+    h.key('p', { [modifier]: true });
+    assert.equal(h.document.activeElement.id, 'outside');
+  }
 });

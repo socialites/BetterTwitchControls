@@ -359,8 +359,11 @@ function adjustVolume(delta: number) {
 }
 
 function onKeyDown(e: KeyboardEvent) {
-  if (e.defaultPrevented) return;
   if (e.isComposing) return;
+  const isPlayerFocusKey = e.key === "p" || e.key === "P";
+  // Manual player focus must work even if Twitch or another extension has
+  // already claimed this key. Typing/chat and modifier guards still apply.
+  if (e.defaultPrevented && !isPlayerFocusKey) return;
 
   const active = document.activeElement;
 
@@ -376,11 +379,12 @@ function onKeyDown(e: KeyboardEvent) {
   if (isEditableElement(active) || isInChat(active)) return;
 
   // Plain "p" explicitly restores focus without toggling playback.
-  if (e.key === "p" || e.key === "P") {
+  if (isPlayerFocusKey) {
     if (e.altKey || e.ctrlKey || e.metaKey) return;
     if (!focusPlayerControls()) return;
     e.preventDefault();
-    e.stopPropagation();
+    // Stop later listeners on the same window from undoing explicit focus.
+    e.stopImmediatePropagation();
     return;
   }
 
@@ -470,7 +474,7 @@ function install() {
   if (w[INSTALL_FLAG]) return;
   w[INSTALL_FLAG] = true;
 
-  // Capture phase so we can grab the key before site handlers if needed.
+  // Install at document_start, before Twitch registers its keyboard handlers.
   window.addEventListener("keydown", onKeyDown, { capture: true });
 
   installAutoPlayerFocus();
