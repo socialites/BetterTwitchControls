@@ -5,10 +5,14 @@
 ### Controls
 
 <!-- CONTROLS:START -->
+
+
 ### BetterTwitchControls — Controls
 
 ### Implemented
 
+- **Automatic player focus**: Focus the player after two seconds outside chat, including after navigation or clicking elsewhere. Chat hover/focus and other text fields are protected.
+- **`p`**: Immediately focus the player controls when you are outside chat and not typing (without toggling playback).
 - **`c`**: Focus the chat input (only when you are *not* already typing in an input/textarea/contenteditable).
 - **`Esc` (while chat is focused)**: Leave chat focus and focus the player controls (so player hotkeys work again).
 - **`t` (while player controls are focused)**: Toggle Theatre Mode (clicks the Twitch theatre-mode button that’s labeled with `(alt+t)`).
@@ -17,8 +21,10 @@
 
 - **Focus**
   - **Focus chat from outside chat**: `c` (**implemented**)
+  - **Focus player from outside chat**: `p` (**implemented**)
   - **Focus player from inside chat**: `Esc` (**implemented**)
 - **Playback / Player**
+  - **Fullscreen**: `f` (Twitch built-in; restores player focus if needed)
   - **Play/Pause**: `k` or `Space` (Twitch built-in; should work once player is focused)
   - **Exit Theatre Mode**: `Esc` (Twitch built-in; should work once player is focused)
   - **Volume up/down**: `ArrowUp` / `ArrowDown` (custom; focuses + adjusts the volume slider, **implemented**)
@@ -30,7 +36,17 @@
 - **Misc**
   - **Clip**: `⌥+x` (Twitch built-in)
   - **Mute/Unmute**: `m` (Twitch built-in)
+
 <!-- CONTROLS:END -->
+
+### Updating / Testing the extension
+
+Reload BetterTwitchControls on your browser's extensions page, then refresh Twitch.
+The player focuses after two seconds outside chat; press `p` for immediate focus.
+Chat hover/focus and other text fields keep their focus while you type.
+
+For a packaged install, extract `BetterTwitchControls.zip` and use “Load unpacked”
+on the extracted folder containing `manifest.json`.
 
 ### Build
 

@@ -1,3 +1,11 @@
+## v1.2.0 (October 5, 2026):
+- Automatically restore player focus after two seconds outside chat, including after navigation and late player loading.
+- Add `p` / `P` to focus the player immediately without toggling playback.
+- Preserve chat and other text-field focus while typing.
+- Route built-in player shortcuts to the player when focus is elsewhere or on the volume slider.
+- Update controls, README, and popup with the new focus shortcuts.
+- Add regression coverage for focus, navigation, typing protection, and shortcut routing.
+
 ## v1.1.3 (January 1, 2026):
 - Update script to not attach focus to volume slider so that volume up/down keys work as expected while still allowing other shortcuts to work as intended
 

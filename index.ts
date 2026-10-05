@@ -1,13 +1,22 @@
 
 /**
  * BetterTwitchControls
- * - Press "c" anywhere (when you're NOT already typing) to focus Twitch chat input.
+ * - Restore player focus outside chat after two seconds.
+ * - Press "c" to focus chat, or "p" to focus the player, when not typing.
  *
  * Works with Twitch's WYSIWYG + 7TV because it targets Twitch's stable data attributes:
  *   - [data-a-target="chat-input"]
  *   - [data-test-selector="chat-input"]
  */
 const INSTALL_FLAG = "__betterTwitchControlsInstalled__";
+const PLAYER_FOCUS_DELAY_MS = 2000;
+const CHAT_REGION_SELECTOR =
+  '[data-a-target="chat-room-component"], [data-test-selector="chat-room-component"], .chat-room, [data-a-target="chat-input"], [data-test-selector="chat-input"], .chat-wysiwyg-input__editor';
+
+function isInChat(el: Element | null): boolean {
+  return Boolean(el?.closest(CHAT_REGION_SELECTOR));
+}
+
 const isTwitchDomain = () => {
   try {
     const host = window.location.hostname || "";
@@ -118,9 +127,9 @@ function getPlayerFocusTarget(): HTMLElement | null {
   return null;
 }
 
-function focusPlayerControls() {
+function focusPlayerControls(): HTMLElement | null {
   const target = getPlayerFocusTarget();
-  if (!target) return;
+  if (!target) return null;
 
   // If it's not naturally focusable, make it programmatically focusable.
   if (target.tabIndex < 0 && !(target instanceof HTMLButtonElement)) {
@@ -134,44 +143,59 @@ function focusPlayerControls() {
   } catch {
     target.focus();
   }
+  return document.activeElement === target ? target : null;
 }
 
 function canStealFocusForPlayer(): boolean {
-  if (document.visibilityState !== "visible") return false;
+  if (document.visibilityState !== "visible" || !document.hasFocus()) return false;
   const active = document.activeElement;
-  // Don't steal focus if user is typing anywhere.
-  if (isEditableElement(active)) return false;
-  return true;
+  return !isEditableElement(active) && !isInChat(active);
 }
 
-function autoFocusPlayerControlsOnceReady() {
-  if (!canStealFocusForPlayer()) return;
+function installAutoPlayerFocus() {
+  let pointerInChat = false;
+  let pendingFocus: number | null = null;
 
-  // Try immediately + a couple delayed retries (player mounts async).
-  focusPlayerControls();
-  window.setTimeout(() => {
-    if (!canStealFocusForPlayer()) return;
-    focusPlayerControls();
-  }, 600);
-  window.setTimeout(() => {
-    if (!canStealFocusForPlayer()) return;
-    focusPlayerControls();
-  }, 1800);
+  const cancelPendingFocus = () => {
+    if (pendingFocus !== null) window.clearTimeout(pendingFocus);
+    pendingFocus = null;
+  };
+  const scheduleFocus = () => {
+    if (!canStealFocusForPlayer() || pointerInChat || isPlayerControlsFocused()) {
+      cancelPendingFocus();
+      return;
+    }
+    if (pendingFocus !== null || !getPlayerFocusTarget()) return;
+    pendingFocus = window.setTimeout(() => {
+      pendingFocus = null;
+      if (canStealFocusForPlayer() && !pointerInChat && !isPlayerControlsFocused()) {
+        focusPlayerControls();
+      }
+    }, PLAYER_FOCUS_DELAY_MS);
+  };
 
-  // Also watch for player controls being inserted (Twitch is SPA-ish).
-  try {
-    const obs = new MutationObserver(() => {
-      if (!canStealFocusForPlayer()) return;
-      const controls = document.querySelector('[data-a-target="player-controls"]');
-      if (!controls) return;
-      focusPlayerControls();
-      obs.disconnect();
-    });
-    obs.observe(document.documentElement, { childList: true, subtree: true });
-    window.setTimeout(() => obs.disconnect(), 8000);
-  } catch {
-    // ignore
-  }
+  document.addEventListener("pointerover", (e) => {
+    pointerInChat = isInChat(e.target instanceof Element ? e.target : null);
+    scheduleFocus();
+  });
+  document.addEventListener("pointerout", (e) => {
+    pointerInChat = isInChat(e.relatedTarget instanceof Element ? e.relatedTarget : null);
+    scheduleFocus();
+  });
+  document.addEventListener("pointerdown", () => {
+    cancelPendingFocus();
+    scheduleFocus();
+  }, { capture: true });
+  document.addEventListener("focusin", scheduleFocus);
+  document.addEventListener("focusout", scheduleFocus);
+  document.addEventListener("visibilitychange", scheduleFocus);
+  window.addEventListener("focus", scheduleFocus);
+  window.addEventListener("blur", cancelPendingFocus);
+
+  // Keep checking for late mounts, removed focused controls, and SPA navigation.
+  // A single timer avoids watching every mutation in Twitch's busy chat DOM.
+  window.setInterval(scheduleFocus, 1000);
+  scheduleFocus();
 }
 
 function isPlayerControlsFocused(): boolean {
@@ -180,7 +204,9 @@ function isPlayerControlsFocused(): boolean {
 
   // Focus may be on a button inside the controls, or on the controls container itself.
   return Boolean(
-    active.closest?.('[data-a-target="player-controls"], #channel-player'),
+    active.closest?.(
+      '[data-a-target="player-controls"], #channel-player, [data-a-target="player-play-pause-button"]',
+    ),
   );
 }
 
@@ -338,44 +364,6 @@ function onKeyDown(e: KeyboardEvent) {
 
   const active = document.activeElement;
 
-  // If the Twitch volume slider is focused, it "eats" many keys. We redirect common player keys
-  // back to the player controls so shortcuts keep working.
-  if (isVolumeSliderFocused()) {
-    const k = e.key;
-    const isSpace = k === " " || k === "Space" || k === "Spacebar";
-    const passthroughKeys =
-      k === "ArrowLeft" ||
-      k === "ArrowRight" ||
-      k === "k" ||
-      k === "K" ||
-      k === "m" ||
-      k === "M" ||
-      k === "Escape" ||
-      isSpace;
-
-    // Let our custom handlers run for these keys instead.
-    const handledByUs =
-      k === "c" ||
-      k === "C" ||
-      k === "t" ||
-      k === "T" ||
-      k === "l" ||
-      k === "L" ||
-      k === "ArrowUp" ||
-      k === "ArrowDown";
-
-    if (passthroughKeys && !handledByUs) {
-      // Stop the slider from adjusting itself / scrolling.
-      if (k === "ArrowLeft" || k === "ArrowRight" || isSpace) {
-        e.preventDefault();
-      }
-
-      focusPlayerControls();
-      // Don't stop propagation; let Twitch handle the key with player focus restored.
-      return;
-    }
-  }
-
   // Esc: when you're typing in chat, exit chat focus back to the player.
   if (e.key === "Escape" && isChatInputFocused()) {
     e.preventDefault();
@@ -385,7 +373,41 @@ function onKeyDown(e: KeyboardEvent) {
   }
 
   // If you're already typing anywhere (including chat), don't steal keys.
-  if (isEditableElement(active)) return;
+  if (isEditableElement(active) || isInChat(active)) return;
+
+  // Plain "p" explicitly restores focus without toggling playback.
+  if (e.key === "p" || e.key === "P") {
+    if (e.altKey || e.ctrlKey || e.metaKey) return;
+    if (!focusPlayerControls()) return;
+    e.preventDefault();
+    e.stopPropagation();
+    return;
+  }
+
+  // Focusing during a keydown doesn't change that event's original target.
+  // Re-dispatch built-in player shortcuts on the focused control so the first
+  // keypress also reaches Twitch's player handlers (including fullscreen).
+  const key = e.key.toLowerCase();
+  const isNativePlayerKey =
+    key === "f" || key === "k" || key === "m" || key === " " ||
+    key === "space" || key === "spacebar" || key === "arrowleft" ||
+    key === "arrowright" || key === "escape";
+  if (
+    isNativePlayerKey && !e.altKey && !e.ctrlKey && !e.metaKey &&
+    (!isPlayerControlsFocused() || isVolumeSliderFocused())
+  ) {
+    const target = focusPlayerControls();
+    if (!target) return;
+    e.preventDefault();
+    e.stopPropagation();
+    target.dispatchEvent(new KeyboardEvent("keydown", {
+      key: e.key, code: e.code, location: e.location,
+      keyCode: e.keyCode, which: e.which,
+      shiftKey: e.shiftKey, repeat: e.repeat,
+      bubbles: true, cancelable: true, composed: true,
+    } as KeyboardEventInit));
+    return;
+  }
 
   // "t": toggle theatre mode when the player controls are focused.
   if (e.key === "t" || e.key === "T") {
@@ -451,8 +473,7 @@ function install() {
   // Capture phase so we can grab the key before site handlers if needed.
   window.addEventListener("keydown", onKeyDown, { capture: true });
 
-  // Make theatre-mode + player shortcuts work immediately on page load.
-  autoFocusPlayerControlsOnceReady();
+  installAutoPlayerFocus();
 }
 
 install();
