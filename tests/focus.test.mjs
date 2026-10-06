@@ -102,7 +102,7 @@ test('chat, search, and contenteditable fields retain focus and their keys', t =
     target.focus();
     h.advance(5000);
     assert.equal(h.document.activeElement, target);
-    for (const key of ['p', 'P', 'f', 't', 'l', 'ArrowLeft', 'ArrowUp']) {
+    for (const key of ['p', 'P', 'h', 'H', 'f', 't', 'l', 'ArrowLeft', 'ArrowUp']) {
       assert.equal(h.key(key).defaultPrevented, false);
       assert.equal(h.document.activeElement, target);
     }
@@ -265,5 +265,61 @@ test('previously prevented p still preserves chat, text fields, and modified sho
     h.find('#outside').focus();
     h.key('p', { [modifier]: true });
     assert.equal(h.document.activeElement.id, 'outside');
+  }
+});
+
+
+test('h/H collapse and expand chat using Twitch button and restore player focus', t => {
+  const h = setup(t);
+  h.document.body.insertAdjacentHTML('beforeend', '<button data-a-target="right-column__toggle-collapse-btn" aria-label="Collapse Chat"></button>');
+  const toggle = h.find('[data-a-target="right-column__toggle-collapse-btn"]');
+  let collapsed = false;
+  toggle.addEventListener('click', () => {
+    collapsed = !collapsed;
+    toggle.setAttribute('aria-label', collapsed ? 'Expand Chat' : 'Collapse Chat');
+  });
+  h.find('#outside').focus();
+  assert.equal(h.key('h').defaultPrevented, true);
+  assert.equal(collapsed, true);
+  assert.equal(h.document.activeElement, h.play);
+  assert.equal(h.key('H').defaultPrevented, true);
+  assert.equal(collapsed, false);
+  assert.equal(h.document.activeElement, h.play);
+});
+
+test('h ignores repeats, modifiers, composition, and typing with a toggle present', t => {
+  const h = setup(t);
+  h.document.body.insertAdjacentHTML('beforeend', '<button data-a-target="right-column__toggle-collapse-btn"></button>');
+  let clicks = 0;
+  h.find('[data-a-target="right-column__toggle-collapse-btn"]').addEventListener('click', () => clicks++);
+  h.key('h', { repeat: true });
+  for (const modifier of ['ctrlKey', 'altKey', 'metaKey', 'isComposing']) {
+    assert.equal(h.key('h', { [modifier]: true }).defaultPrevented, false);
+  }
+  for (const selector of ['textarea', '#search', '#editor', '#chat-link']) {
+    h.find(selector).focus();
+    assert.equal(h.key('h').defaultPrevented, false);
+    assert.equal(h.document.activeElement, h.find(selector));
+  }
+  assert.equal(clicks, 0);
+});
+
+test('h falls back to labelled buttons and works without a player', t => {
+  const h = setup(t, { player: false });
+  h.document.body.insertAdjacentHTML('beforeend', '<button aria-label="Expand Chat"></button>');
+  let clicks = 0;
+  h.find('[aria-label="Expand Chat"]').addEventListener('click', () => clicks++);
+  h.find('#outside').focus();
+  assert.equal(h.key('h').defaultPrevented, true);
+  assert.equal(clicks, 1);
+});
+
+test('h leaves the key alone without an available toggle', t => {
+  const h = setup(t);
+  assert.equal(h.key('h').defaultPrevented, false);
+  for (const attributes of ['disabled', 'aria-disabled="true"', 'hidden', 'aria-hidden="true"']) {
+    h.document.body.insertAdjacentHTML('beforeend', `<button data-a-target="right-column__toggle-collapse-btn" ${attributes}></button>`);
+    assert.equal(h.key('h').defaultPrevented, false);
+    h.find('[data-a-target="right-column__toggle-collapse-btn"]').remove();
   }
 });

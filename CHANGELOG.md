@@ -1,4 +1,7 @@
-## Unreleased:
+## v1.3.0 (October 6, 2026):
+- Add `h` / `H` to show or hide Twitch's chat sidebar using its collapse/expand button.
+- Preserve typing and modified shortcuts; ignore held-key repeats and restore player focus after toggling.
+- Update controls, README, and popup with the new chat-sidebar shortcut.
 - Add Chrome Web Store API commands to upload packages, submit for review, and check status.
 - Add OAuth refresh/access-token setup, dry-run mode, and staged or automatic publication after review.
 - Document store setup and add mocked API regression tests.

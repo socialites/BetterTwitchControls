@@ -244,6 +244,24 @@ function toggleTheatreMode() {
   btn.click();
 }
 
+function getChatSidebarToggleButton(): HTMLButtonElement | null {
+  const selectors = [
+    'button[data-a-target="right-column__toggle-collapse-btn"]',
+    'button[aria-label="Collapse Chat"], button[aria-label="Expand Chat"]',
+  ];
+  for (const selector of selectors) {
+    const buttons = document.querySelectorAll(selector);
+    for (const button of buttons) {
+      if (button instanceof HTMLButtonElement && !button.disabled &&
+          button.getAttribute("aria-disabled") !== "true" &&
+          !button.closest('[hidden], [aria-hidden="true"]')) {
+        return button;
+      }
+    }
+  }
+  return null;
+}
+
 function getPlayerControlsRoot(): HTMLElement | null {
   const selectors = ['[data-a-target="player-controls"]', "#channel-player"];
   for (let i = 0; i < selectors.length; i++) {
@@ -385,6 +403,20 @@ function onKeyDown(e: KeyboardEvent) {
     e.preventDefault();
     // Stop later listeners on the same window from undoing explicit focus.
     e.stopImmediatePropagation();
+    return;
+  }
+
+  // "h": use Twitch's own collapse/expand button, then restore player focus.
+  if (e.key === "h" || e.key === "H") {
+    if (e.altKey || e.ctrlKey || e.metaKey) return;
+    const button = getChatSidebarToggleButton();
+    if (!button) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    if (!e.repeat) {
+      button.click();
+      focusPlayerControls();
+    }
     return;
   }
 
