@@ -1,3 +1,9 @@
+## v1.4.0 (October 14, 2026):
+- Add `r` / `R` to activate 7TV's Restart player button when 7TV provides it.
+- Show volume percentage at the top of the player when using ArrowUp/ArrowDown, with a translucent blurred background and automatic fade-out.
+- Refresh the indicator during repeated volume adjustments and keep it inside the player in fullscreen.
+- Preserve typing and modifier shortcuts, and document the 7TV requirement in the controls, README, and popup.
+
 ## v1.3.0 (October 6, 2026):
 - Add `h` / `H` to show or hide Twitch's chat sidebar using its collapse/expand button.
 - Preserve typing and modified shortcuts; ignore held-key repeats and restore player focus after toggling.

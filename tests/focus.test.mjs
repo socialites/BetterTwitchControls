@@ -323,3 +323,105 @@ test('h leaves the key alone without an available toggle', t => {
     h.find('[data-a-target="right-column__toggle-collapse-btn"]').remove();
   }
 });
+
+test('r/R activate the supplied 7TV restart button once per press', t => {
+  const h = setup(t);
+  h.find('#channel-player').insertAdjacentHTML('beforeend', '<seventv-container class="seventv-player-restart-button-container" data-placement="right"><button class="seventv-player-restart" type="button" aria-label="Restart player"></button></seventv-container>');
+  let clicks = 0;
+  h.find('.seventv-player-restart').addEventListener('click', () => clicks++);
+  h.find('#outside').focus();
+  assert.equal(h.key('r').defaultPrevented, true);
+  assert.equal(h.document.activeElement, h.play);
+  h.key('r', { repeat: true });
+  h.key('R');
+  assert.equal(clicks, 2);
+});
+
+test('restart is optional and preserves typing and modified keys', t => {
+  const h = setup(t);
+  assert.equal(h.key('r').defaultPrevented, false);
+  h.find('#channel-player').insertAdjacentHTML('beforeend', '<button class="seventv-player-restart" disabled></button>');
+  assert.equal(h.key('r').defaultPrevented, false);
+  h.find('.seventv-player-restart').disabled = false;
+  let clicks = 0;
+  h.find('.seventv-player-restart').addEventListener('click', () => clicks++);
+  for (const modifier of ['ctrlKey', 'metaKey', 'altKey', 'isComposing']) {
+    assert.equal(h.key('r', { [modifier]: true }).defaultPrevented, false);
+  }
+  for (const selector of ['textarea', '#search', '#editor', '#chat-link']) {
+    h.find(selector).focus();
+    assert.equal(h.key('r').defaultPrevented, false);
+    assert.equal(h.document.activeElement, h.find(selector));
+  }
+  assert.equal(clicks, 0);
+});
+
+test('volume feedback shows normalized percentage and fades away without taking focus', t => {
+  const h = setup(t);
+  h.key('ArrowUp');
+  const indicator = h.find('[data-btc-volume-indicator]');
+  assert.equal(indicator.textContent, '51%');
+  assert.equal(indicator.parentElement, h.find('#channel-player'));
+  assert.equal(indicator.style.pointerEvents, 'none');
+  assert.equal(h.document.activeElement, h.play);
+  h.advance(899);
+  assert.equal(indicator.style.opacity, '1');
+  h.advance(1);
+  assert.equal(indicator.style.opacity, '0');
+  h.advance(200);
+  assert.equal(h.find('[data-btc-volume-indicator]'), null);
+});
+
+test('repeated adjustments reuse the indicator and reset its fade/removal timers', t => {
+  const h = setup(t);
+  h.key('ArrowUp');
+  const indicator = h.find('[data-btc-volume-indicator]');
+  h.advance(950);
+  h.key('ArrowUp', { repeat: true });
+  assert.equal(h.find('[data-btc-volume-indicator]'), indicator);
+  assert.equal(indicator.textContent, '52%');
+  assert.equal(indicator.style.opacity, '1');
+  h.advance(899);
+  assert.equal(indicator.style.opacity, '1');
+  h.advance(201);
+  assert.equal(h.find('[data-btc-volume-indicator]'), null);
+});
+
+test('volume percentage honors slider range and clamps at zero and one hundred', t => {
+  const h = setup(t);
+  const slider = h.find('[type="range"]');
+  slider.min = '0'; slider.max = '100'; slider.step = '1'; slider.value = '99';
+  h.key('ArrowUp');
+  h.key('ArrowUp');
+  assert.equal(h.find('[data-btc-volume-indicator]').textContent, '100%');
+  slider.value = '0';
+  h.key('ArrowDown');
+  assert.equal(h.find('[data-btc-volume-indicator]').textContent, '0%');
+});
+
+test('indicator moves to the fullscreen root and survives player replacement', t => {
+  const h = setup(t);
+  h.key('ArrowUp');
+  const old = h.find('[data-btc-volume-indicator]');
+  const player = h.find('#channel-player');
+  player.outerHTML = '<div id="fullscreen-wrapper">' + player.outerHTML + '</div>';
+  const fullscreen = h.find('#fullscreen-wrapper');
+  Object.defineProperty(h.document, 'fullscreenElement', { configurable: true, value: fullscreen });
+  h.key('ArrowDown');
+  const indicator = h.find('#fullscreen-wrapper > [data-btc-volume-indicator]');
+  assert.ok(indicator);
+  assert.equal(old.isConnected, false);
+  h.advance(1100);
+  assert.equal(h.find('#fullscreen-wrapper > [data-btc-volume-indicator]'), null);
+});
+
+test('no indicator appears for typing or when volume controls are unavailable', t => {
+  const h = setup(t);
+  h.find('textarea').focus();
+  h.key('ArrowUp');
+  assert.equal(h.find('[data-btc-volume-indicator]'), null);
+  h.find('#outside').focus();
+  h.find('[type="range"]').remove();
+  assert.equal(h.key('ArrowDown').defaultPrevented, false);
+  assert.equal(h.find('[data-btc-volume-indicator]'), null);
+});

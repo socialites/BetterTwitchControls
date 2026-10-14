@@ -339,6 +339,78 @@ function activateSkipToLive() {
   }
 }
 
+function getSevenTVRestartButton(): HTMLButtonElement | null {
+  const button = document.querySelector('button.seventv-player-restart');
+  if (!(button instanceof HTMLButtonElement) || button.disabled ||
+      button.getAttribute("aria-disabled") === "true") return null;
+  return button;
+}
+
+let volumeIndicator: HTMLDivElement | null = null;
+let volumeHideTimeout: number | null = null;
+let volumeRemoveTimeout: number | null = null;
+
+function showVolumeIndicator(slider: HTMLInputElement) {
+  const fullscreen = document.fullscreenElement;
+  const root = fullscreen instanceof HTMLElement && fullscreen.contains(slider)
+    ? fullscreen
+    : slider.closest('[data-a-target="video-player"], .video-player, #channel-player');
+  if (!(root instanceof HTMLElement)) return;
+
+  const min = Number(slider.min || 0);
+  const max = Number(slider.max || 1);
+  const value = Number(slider.value);
+  if (!Number.isFinite(value) || !Number.isFinite(min) ||
+      !Number.isFinite(max) || max <= min) return;
+  const percent = Math.round(Math.min(1, Math.max(0, (value - min) / (max - min))) * 100);
+
+  if (volumeHideTimeout !== null) window.clearTimeout(volumeHideTimeout);
+  if (volumeRemoveTimeout !== null) window.clearTimeout(volumeRemoveTimeout);
+  volumeRemoveTimeout = null;
+
+  if (!volumeIndicator || volumeIndicator.parentElement !== root) {
+    volumeIndicator?.remove();
+    volumeIndicator = document.createElement("div");
+    volumeIndicator.setAttribute("data-btc-volume-indicator", "");
+    volumeIndicator.setAttribute("aria-hidden", "true");
+    Object.assign(volumeIndicator.style, {
+      position: "absolute", top: "24px", left: "50%",
+      transform: "translateX(-50%)", opacity: "1",
+      padding: "8px 16px", borderRadius: "6px",
+      background: "rgba(0, 0, 0, 0.42)", backdropFilter: "blur(12px)",
+      border: "1px solid rgba(255, 255, 255, 0.12)",
+      boxShadow: "0 2px 12px rgba(0, 0, 0, 0.2)",
+      color: "#fff", font: "500 16px/1.4 sans-serif",
+      fontVariantNumeric: "tabular-nums", textAlign: "center",
+      pointerEvents: "none", userSelect: "none", zIndex: "1000",
+      transition: "opacity 180ms ease, transform 180ms ease",
+    });
+    volumeIndicator.style.setProperty("-webkit-backdrop-filter", "blur(12px)");
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+      volumeIndicator.style.transition = "none";
+    }
+    if (!window.getComputedStyle(root).position || window.getComputedStyle(root).position === "static") {
+      root.style.position = "relative";
+    }
+    root.appendChild(volumeIndicator);
+  }
+
+  const indicator = volumeIndicator;
+  indicator.textContent = `${percent}%`;
+  indicator.style.opacity = "1";
+  indicator.style.transform = "translateX(-50%)";
+  volumeHideTimeout = window.setTimeout(() => {
+    volumeHideTimeout = null;
+    indicator.style.opacity = "0";
+    indicator.style.transform = "translateX(-50%) translateY(-4px)";
+    volumeRemoveTimeout = window.setTimeout(() => {
+      indicator.remove();
+      if (volumeIndicator === indicator) volumeIndicator = null;
+      volumeRemoveTimeout = null;
+    }, 200);
+  }, 900);
+}
+
 function getVolumeSlider(): HTMLInputElement | null {
   const el = document.querySelector('[data-a-target="player-volume-slider"]');
   return el instanceof HTMLInputElement ? el : null;
@@ -374,6 +446,7 @@ function adjustVolume(delta: number) {
   const step = stepAttr > 0 ? stepAttr : 0.01;
 
   setRangeValue(slider, current + delta * step);
+  showVolumeIndicator(slider);
 }
 
 function onKeyDown(e: KeyboardEvent) {
@@ -410,6 +483,20 @@ function onKeyDown(e: KeyboardEvent) {
   if (e.key === "h" || e.key === "H") {
     if (e.altKey || e.ctrlKey || e.metaKey) return;
     const button = getChatSidebarToggleButton();
+    if (!button) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    if (!e.repeat) {
+      button.click();
+      focusPlayerControls();
+    }
+    return;
+  }
+
+  // "r": activate 7TV's restart control only when the extension provides it.
+  if (e.key === "r" || e.key === "R") {
+    if (e.altKey || e.ctrlKey || e.metaKey) return;
+    const button = getSevenTVRestartButton();
     if (!button) return;
     e.preventDefault();
     e.stopImmediatePropagation();
