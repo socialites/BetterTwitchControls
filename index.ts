@@ -350,12 +350,23 @@ let volumeIndicator: HTMLDivElement | null = null;
 let volumeHideTimeout: number | null = null;
 let volumeRemoveTimeout: number | null = null;
 
-function showVolumeIndicator(slider: HTMLInputElement) {
+function getVolumeIndicatorRoot(slider: HTMLInputElement): HTMLElement | null {
   const fullscreen = document.fullscreenElement;
-  const root = fullscreen instanceof HTMLElement && fullscreen.contains(slider)
-    ? fullscreen
-    : slider.closest('[data-a-target="video-player"], .video-player, #channel-player');
-  if (!(root instanceof HTMLElement)) return;
+  if (fullscreen instanceof HTMLElement && fullscreen.contains(slider)) return fullscreen;
+
+  // #channel-player may be the bottom controls strip. Find the nearest shared
+  // container for the video and slider instead of anchoring to that strip.
+  let ancestor = slider.parentElement;
+  while (ancestor && ancestor !== document.body && ancestor !== document.documentElement) {
+    if (ancestor.querySelector("video")) return ancestor;
+    ancestor = ancestor.parentElement;
+  }
+  return null;
+}
+
+function showVolumeIndicator(slider: HTMLInputElement) {
+  const root = getVolumeIndicatorRoot(slider);
+  if (!root) return;
 
   const min = Number(slider.min || 0);
   const max = Number(slider.max || 1);
@@ -374,8 +385,8 @@ function showVolumeIndicator(slider: HTMLInputElement) {
     volumeIndicator.setAttribute("data-btc-volume-indicator", "");
     volumeIndicator.setAttribute("aria-hidden", "true");
     Object.assign(volumeIndicator.style, {
-      position: "absolute", top: "24px", left: "50%",
-      transform: "translateX(-50%)", opacity: "1",
+      position: "absolute", top: "30%", left: "50%",
+      transform: "translate(-50%, -50%)", opacity: "1",
       padding: "8px 16px", borderRadius: "6px",
       background: "rgba(0, 0, 0, 0.42)", backdropFilter: "blur(12px)",
       border: "1px solid rgba(255, 255, 255, 0.12)",
@@ -398,11 +409,11 @@ function showVolumeIndicator(slider: HTMLInputElement) {
   const indicator = volumeIndicator;
   indicator.textContent = `${percent}%`;
   indicator.style.opacity = "1";
-  indicator.style.transform = "translateX(-50%)";
+  indicator.style.transform = "translate(-50%, -50%)";
   volumeHideTimeout = window.setTimeout(() => {
     volumeHideTimeout = null;
     indicator.style.opacity = "0";
-    indicator.style.transform = "translateX(-50%) translateY(-4px)";
+    indicator.style.transform = "translate(-50%, -50%) translateY(-4px)";
     volumeRemoveTimeout = window.setTimeout(() => {
       indicator.remove();
       if (volumeIndicator === indicator) volumeIndicator = null;

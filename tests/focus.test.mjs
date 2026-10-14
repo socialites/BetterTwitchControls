@@ -4,7 +4,7 @@ import test from 'node:test';
 import { JSDOM } from 'jsdom';
 
 const script = readFileSync(new URL('../dist/index.js', import.meta.url), 'utf8');
-const playerHTML = `<div id="channel-player"><div data-a-target="player-controls">
+const playerHTML = `<div id="channel-player"><video></video><div data-a-target="player-controls">
   <button data-a-target="player-play-pause-button">Play</button>
   <button aria-label="Theatre Mode (alt+t)">Theatre</button>
   <button tabindex="0">LIVE</button>
@@ -424,4 +424,36 @@ test('no indicator appears for typing or when volume controls are unavailable', 
   h.find('[type="range"]').remove();
   assert.equal(h.key('ArrowDown').defaultPrevented, false);
   assert.equal(h.find('[data-btc-volume-indicator]'), null);
+});
+
+
+test('volume indicator anchors to video bounds rather than a bottom controls strip', t => {
+  const h = setup(t);
+  const controlsStrip = h.find('#channel-player');
+  controlsStrip.querySelector('video').remove();
+  controlsStrip.outerHTML = '<div class="video-player" id="video-bounds"><video></video>' + controlsStrip.outerHTML + '</div>';
+  h.key('ArrowUp');
+  const indicator = h.find('[data-btc-volume-indicator]');
+  assert.equal(indicator.parentElement, h.find('#video-bounds'));
+  assert.equal(indicator.style.top, '30%');
+  assert.equal(indicator.style.left, '50%');
+  assert.equal(indicator.style.transform, 'translate(-50%, -50%)');
+  assert.equal(h.find('#channel-player').querySelector('[data-btc-volume-indicator]'), null);
+});
+
+test('volume placement follows fullscreen bounds at thirty percent', t => {
+  const h = setup(t);
+  Object.defineProperty(h.document, 'fullscreenElement', { value: h.find('#channel-player') });
+  h.key('ArrowUp');
+  const indicator = h.find('[data-btc-volume-indicator]');
+  assert.equal(indicator.parentElement, h.document.fullscreenElement);
+  assert.equal(indicator.style.top, '30%');
+});
+
+test('volume feedback waits for an actual video instead of anchoring to the page', t => {
+  const h = setup(t);
+  h.find('video').remove();
+  h.key('ArrowUp');
+  assert.equal(h.find('[data-btc-volume-indicator]'), null);
+  assert.equal(h.find('[type="range"]').value, '0.51');
 });

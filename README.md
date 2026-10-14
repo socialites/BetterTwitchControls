@@ -19,7 +19,7 @@
 - **`Esc` (while chat is focused)**: Leave chat focus and focus the player controls (so player hotkeys work again).
 - **`t` (while player controls are focused)**: Toggle Theatre Mode (clicks the Twitch theatre-mode button that’s labeled with `(alt+t)`).
 - **`l` (while player controls are focused)**: Skip to Live (activates the “LIVE” control that appears after rewinding).
-- **`ArrowUp` / `ArrowDown` (while player controls are focused)**: Volume up/down with a fading percentage indicator at the top of the player.
+- **`ArrowUp` / `ArrowDown` (while player controls are focused)**: Volume up/down with a fading percentage indicator centered 30% down from the player’s top.
 
 - **Focus**
   - **Focus chat from outside chat**: `c` (**implemented**)
@@ -31,7 +31,7 @@
   - **Exit Theatre Mode**: `Esc` (Twitch built-in; should work once player is focused)
   - **Volume up/down**: `ArrowUp` / `ArrowDown` (custom; focuses + adjusts the volume slider, **implemented**)
   - **Restart player**: `r` (**requires the 7TV extension and its Restart player button**)
-  - **Volume feedback**: A translucent, blurred percentage indicator appears while using the volume arrow keys, then fades away.
+  - **Volume feedback**: A translucent, blurred percentage indicator appears centered 30% down from the player’s top while using the volume arrow keys, then fades away.
   - **Seek**: `ArrowLeft` / `ArrowRight` (Twitch built-in; should work once player is focused)
 - **Chat Sidebar**
   - **Show/Hide chat**: `h` (**implemented**)

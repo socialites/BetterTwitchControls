@@ -1,3 +1,8 @@
+## v1.4.1 (October 14, 2026):
+- Anchor the volume percentage indicator to the container shared by the video and its controls, instead of the bottom controls strip.
+- Center the indicator horizontally and position its center 30% down from the player’s top, including fullscreen.
+- Add regression tests for Twitch layouts where `#channel-player` identifies the bottom control strip.
+
 ## v1.4.0 (October 14, 2026):
 - Add `r` / `R` to activate 7TV's Restart player button when 7TV provides it.
 - Show volume percentage at the top of the player when using ArrowUp/ArrowDown, with a translucent blurred background and automatic fade-out.
